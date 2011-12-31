@@ -26,17 +26,17 @@ namespace ShyAlex.Compare
 
 		public StructuralDifference GetDifference()
 		{
-			var difference = GetNullDifference();
+			StructuralDifference difference;
 
-			if (difference != null)
+            if (GetNullDifference(out difference))
+            {
+                return null;
+            }
+            if (difference != null)
 			{
 				return difference;
 			}
-			if (expected.Peek() == null)
-			{
-				return null;
-			}
-
+			
 			difference = GetTypeDifference();
 
 			if (difference != null)
@@ -132,27 +132,29 @@ namespace ShyAlex.Compare
 				.Select(f => f.GetValue(obj));
 		}
 
-		private StructuralDifference GetNullDifference()
+		private Boolean GetNullDifference(out StructuralDifference difference)
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();
+            difference = null;
 
 			if (expectedObj == null)
 			{
 				if (actualObj != null)
 				{
-					return new StructuralDifference(String.Format("Expected: null, but actual was: {0}", actualObj));
+					difference = new StructuralDifference(String.Format("Expected: null, but actual was: {0}", actualObj));
+                    return false;
 				}
 
-				return null;
+				return true;
 			}
 
 			if (actualObj == null)
 			{
-				return new StructuralDifference(String.Format("Expected: {0}, but actual was: null", expectedObj));
+				difference = new StructuralDifference(String.Format("Expected: {0}, but actual was: null", expectedObj));
 			}
 
-			return null;
+            return false;
 		}
 
 		private Boolean GetCircularRefsDifference(out StructuralDifference difference)
@@ -180,20 +182,20 @@ namespace ShyAlex.Compare
 			return expectedCircRefIndexes.Length > 1;
 		}
 
-		private StructuralDifference GetTypeDifference()
-		{
-			var expectedObj = expected.Peek();
-			var actualObj = actual.Peek();
+        private StructuralDifference GetTypeDifference()
+        {
+            var expectedObj = expected.Peek();
+            var actualObj = actual.Peek();
 
-			var expectedType = expectedObj.GetType();
-			var actualType = actualObj.GetType();
+            var expectedType = expectedObj.GetType();
+            var actualType = actualObj.GetType();
 
-			if (expectedType != actualType)
-			{
-				return new StructuralDifference(String.Format("Expected type: {0}, but actual type was: {1}", expectedType, actualType));
-			}
+            if (expectedType != actualType)
+            {
+                return new StructuralDifference(String.Format("Expected type: {0}, but actual type was: {1}", expectedType, actualType));
+            }
 
-			return null;
-		}
+            return null;
+        }
 	}
 }
