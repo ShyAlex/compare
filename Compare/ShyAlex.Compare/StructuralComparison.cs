@@ -24,24 +24,40 @@ namespace ShyAlex.Compare
 			this.actual = actualStack;
 		}
 
-		public void AssertStructurallyEqual()
+		public StructuralDifference AssertStructurallyEqual()
 		{
-			if (CheckNull())
+			var difference = CheckNull();
+
+			if (difference != null)
 			{
-				return;
+				return difference;
+			}
+			if (expected.Peek() == null)
+			{
+				return null;
 			}
 
-			CheckTypes();
+			difference = CheckTypes();
 
-			if (CheckCircularRefs())
+			if (difference != null)
 			{
-				return;
+				return difference;
 			}
 
-			Compare();
+			if (CheckCircularRefs(out difference))
+			{
+				return null;
+			}
+
+			if (difference != null)
+			{
+				return difference;
+			}
+
+			return Compare();
 		}
 
-		private void Compare()
+		private StructuralDifference Compare()
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();
@@ -51,21 +67,26 @@ namespace ShyAlex.Compare
 			{
 				if (!expectedObj.Equals(actualObj))
 				{
-					throw new Exception(String.Format("Expected: {0}, but actual was: {1}", expectedObj, actualObj));
+					return new StructuralDifference(String.Format("Expected: {0}, but actual was: {1}", expectedObj, actualObj));
 				}
 
-				return;
+				return null;
 			}
 
 			if (expectedObj is IEnumerable)
 			{
-				CompareEnumerables((IEnumerable)expectedObj, (IEnumerable)actualObj);
+				var difference = CompareEnumerables((IEnumerable)expectedObj, (IEnumerable)actualObj);
+
+				if (difference != null)
+				{
+					return difference;
+				}
 			}
 
-			CompareEnumerables(GetFields(expectedObj), GetFields(actualObj));
+			return CompareEnumerables(GetFields(expectedObj), GetFields(actualObj));
 		}
 
-		private void CompareEnumerables(IEnumerable expectedSequence, IEnumerable actualSequence)
+		private StructuralDifference CompareEnumerables(IEnumerable expectedSequence, IEnumerable actualSequence)
 		{
 			var expectedEnumerator = expectedSequence.GetEnumerator();
 			var actualEnumerator = actualSequence.GetEnumerator();
@@ -74,20 +95,29 @@ namespace ShyAlex.Compare
 			{
 				if (!actualEnumerator.MoveNext())
 				{
-					throw new Exception("expected collection is larger than actual collection");
+					return new StructuralDifference("expected collection is larger than actual collection");
 				}
 
 				expected.Push(expectedEnumerator.Current);
 				actual.Push(actualEnumerator.Current);
-				AssertStructurallyEqual();
+				
+				var difference = AssertStructurallyEqual();
+
+				if (difference != null)
+				{
+					return difference;
+				}
+				
 				actual.Pop();
 				expected.Pop();
 			}
 
 			if (actualEnumerator.MoveNext())
 			{
-				throw new Exception("actual collection is larger than expected collection");
+				return new StructuralDifference("actual collection is larger than expected collection");
 			}
+
+			return null;
 		}
 
 		private IEnumerable<Object> GetFields(Object obj)
@@ -102,7 +132,7 @@ namespace ShyAlex.Compare
 				.Select(f => f.GetValue(obj));
 		}
 
-		private Boolean CheckNull()
+		private StructuralDifference CheckNull()
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();
@@ -111,21 +141,21 @@ namespace ShyAlex.Compare
 			{
 				if (actualObj != null)
 				{
-					throw new Exception(String.Format("Expected: null, but actual was: {0}", actualObj));
+					return new StructuralDifference(String.Format("Expected: null, but actual was: {0}", actualObj));
 				}
 
-				return true;
+				return null;
 			}
 
 			if (actualObj == null)
 			{
-				throw new Exception(String.Format("Expected: {0}, but actual was: null", expectedObj));
+				return new StructuralDifference(String.Format("Expected: {0}, but actual was: null", expectedObj));
 			}
 
-			return false;
+			return null;
 		}
 
-		private Boolean CheckCircularRefs()
+		private Boolean CheckCircularRefs(out StructuralDifference difference)
 		{
 			var expectedCircRefIndexes = expected.Select((o, i) => new { Index = i, Object = o })
 												 .Where(obj => Object.ReferenceEquals(obj.Object, expected.Peek()))
@@ -142,13 +172,15 @@ namespace ShyAlex.Compare
 			
 			if (expectedCircRefString != actualCircRefString)
 			{
-				throw new Exception("Expected to find circular references: " + expectedCircRefString + ", but got: " + actualCircRefString);
+				difference = new StructuralDifference("Expected to find circular references: " + expectedCircRefString + ", but got: " + actualCircRefString);
+				return false;
 			}
 
+			difference = null;
 			return expectedCircRefIndexes.Length > 1;
 		}
 
-		private void CheckTypes()
+		private StructuralDifference CheckTypes()
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();
@@ -158,8 +190,10 @@ namespace ShyAlex.Compare
 
 			if (expectedType != actualType)
 			{
-				throw new Exception(String.Format("Expected type: {0}, but actual type was: {1}", expectedType, actualType));
+				return new StructuralDifference(String.Format("Expected type: {0}, but actual type was: {1}", expectedType, actualType));
 			}
+
+			return null;
 		}
 	}
 }

@@ -16,7 +16,12 @@ namespace ShyAlex.Compare.Tests
 		public void AssertStructurallyEqual(Object expected, Object actual)
 		{
 			var sc = new StructuralComparison(expected, actual);
-			sc.AssertStructurallyEqual();
+			var difference = sc.AssertStructurallyEqual();
+
+			if (difference != null)
+			{
+				throw new Exception(difference.Descroption);
+			}
 		}
 
 		private IEnumerable<ITestCaseData> GetStandardCases()
