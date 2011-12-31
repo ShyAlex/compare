@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="StructuralComparisonTestFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StructuralDifferenceTestFixture.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ShyAlex.Compare\ShyAlex.Compare.csproj">
