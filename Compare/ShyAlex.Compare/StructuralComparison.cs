@@ -24,9 +24,9 @@ namespace ShyAlex.Compare
 			this.actual = actualStack;
 		}
 
-		public StructuralDifference AssertStructurallyEqual()
+		public StructuralDifference GetDifference()
 		{
-			var difference = CheckNull();
+			var difference = GetNullDifference();
 
 			if (difference != null)
 			{
@@ -37,14 +37,14 @@ namespace ShyAlex.Compare
 				return null;
 			}
 
-			difference = CheckTypes();
+			difference = GetTypeDifference();
 
 			if (difference != null)
 			{
 				return difference;
 			}
 
-			if (CheckCircularRefs(out difference))
+			if (GetCircularRefsDifference(out difference))
 			{
 				return null;
 			}
@@ -54,10 +54,10 @@ namespace ShyAlex.Compare
 				return difference;
 			}
 
-			return Compare();
+			return GetStructuralDifference();
 		}
 
-		private StructuralDifference Compare()
+		private StructuralDifference GetStructuralDifference()
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();
@@ -101,7 +101,7 @@ namespace ShyAlex.Compare
 				expected.Push(expectedEnumerator.Current);
 				actual.Push(actualEnumerator.Current);
 				
-				var difference = AssertStructurallyEqual();
+				var difference = GetDifference();
 
 				if (difference != null)
 				{
@@ -132,7 +132,7 @@ namespace ShyAlex.Compare
 				.Select(f => f.GetValue(obj));
 		}
 
-		private StructuralDifference CheckNull()
+		private StructuralDifference GetNullDifference()
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();
@@ -155,7 +155,7 @@ namespace ShyAlex.Compare
 			return null;
 		}
 
-		private Boolean CheckCircularRefs(out StructuralDifference difference)
+		private Boolean GetCircularRefsDifference(out StructuralDifference difference)
 		{
 			var expectedCircRefIndexes = expected.Select((o, i) => new { Index = i, Object = o })
 												 .Where(obj => Object.ReferenceEquals(obj.Object, expected.Peek()))
@@ -180,7 +180,7 @@ namespace ShyAlex.Compare
 			return expectedCircRefIndexes.Length > 1;
 		}
 
-		private StructuralDifference CheckTypes()
+		private StructuralDifference GetTypeDifference()
 		{
 			var expectedObj = expected.Peek();
 			var actualObj = actual.Peek();

@@ -72,7 +72,7 @@ Wire up ShyAlex.Compare to your unit testing framework:
         public static void AreEqual(Object expected, Object actual)
         {
             var comparison = new StructuralComparison(expected, actual);
-            var difference = comparison.AssertStructurallyEqual()
+            var difference = comparison.GetDifference()
             if (difference != null)
             {
                 Assert.Fail(difference.Description);

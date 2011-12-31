@@ -13,10 +13,10 @@ namespace ShyAlex.Compare.Tests
 		[TestCaseSource("GetStandardCases")]
 		[TestCaseSource("GetCollectionCases")]
 		[TestCaseSource("GetCircularReferenceCases")]
-		public void AssertStructurallyEqual(Object expected, Object actual)
+		public void GetDifference(Object expected, Object actual)
 		{
 			var sc = new StructuralComparison(expected, actual);
-			var difference = sc.AssertStructurallyEqual();
+			var difference = sc.GetDifference();
 
 			if (difference != null)
 			{
