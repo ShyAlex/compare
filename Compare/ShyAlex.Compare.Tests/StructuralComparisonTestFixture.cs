@@ -13,15 +13,10 @@ namespace ShyAlex.Compare.Tests
 		[TestCaseSource("GetStandardCases")]
 		[TestCaseSource("GetCollectionCases")]
 		[TestCaseSource("GetCircularReferenceCases")]
-		public void GetDifference(Object expected, Object actual)
+		public StructuralDifference GetDifference(Object expected, Object actual)
 		{
 			var sc = new StructuralComparison(expected, actual);
-			var difference = sc.GetDifference();
-
-			if (difference != null)
-			{
-				throw new Exception(difference.Description);
-			}
+			return sc.GetDifference();
 		}
 
 		private IEnumerable<ITestCaseData> GetStandardCases()
@@ -29,73 +24,79 @@ namespace ShyAlex.Compare.Tests
 			yield return new TestCaseData(
 				null,
 				null)
+                .Returns(null)
 				.SetName("Two nulls are equal");
 
 			yield return new TestCaseData(
 				null,
 				new Object())
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>. Expected: null, but actual was: System.Object"))
 				.SetName("A null and an object instance are not equal");
 
 			yield return new TestCaseData(
 				new Object(),
 				null)
-				.Throws(typeof(Exception))
+				.Returns(new StructuralDifference("Difference at <root-object>. Expected: System.Object, but actual was: null"))
 				.SetName("An object instance and a null are not equal");
 
 			yield return new TestCaseData(
 				new Object(),
 				new Object())
+                .Returns(null)
 				.SetName("Two object instances are equal");
 
 			yield return new TestCaseData(
 				new Object(),
 				String.Empty)
-				.Throws(typeof(Exception))
+				.Returns(new StructuralDifference("Difference at <root-object>. Expected type: System.Object, but actual type was: System.String"))
 				.SetName("Two objects of different types are not equal");
 
 			yield return new TestCaseData(
 				'a',
 				'a')
+                .Returns(null)
 				.SetName("Two a chars are equal");
 
 			yield return new TestCaseData(
 				'a',
 				'b')
-				.Throws(typeof(Exception))
+				.Returns(new StructuralDifference("Difference at <root-object>. Expected: a, but actual was: b"))
 				.SetName("Two differing chars are not equal");
 
 			yield return new TestCaseData(
 				String.Empty,
 				String.Empty)
+                .Returns(null)
 				.SetName("Two empty strings are equal");
 
 			yield return new TestCaseData(
 				"Hello",
 				"There")
-				.Throws(typeof(Exception))
+				.Returns(new StructuralDifference("Difference at <root-object>. Expected: Hello, but actual was: There"))
 				.SetName("Two differing strings are not equal");
 
 			yield return new TestCaseData(
 				new DateTime(1900, 1, 1),
 				new DateTime(1900, 1, 1))
+                .Returns(null)
 				.SetName("Two DateTimes representing the same date are equal");
 
 			yield return new TestCaseData(
 				new DateTime(1900, 1, 1),
 				new DateTime(1900, 1, 2))
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.dateData. Expected: 599266080000000000, but actual was: 599266944000000000"))
 				.SetName("Two differing DateTimes are not equal");
 
 			yield return new TestCaseData(
 				new Exception("I am some message"),
 				new Exception("I am some message"))
+                .Returns(null)
 				.SetName("Two exceptions with the same message are equal");
 
 			yield return new TestCaseData(
 				new Exception("I am some message"),
 				new Exception("I am some massage"))
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>._message. Expected: I am some message, but actual was: I am some massage"))
 				.SetName("Two exceptions with different messages are not equal");
 
 			yield return new TestCaseData(
@@ -113,6 +114,7 @@ namespace ShyAlex.Compare.Tests
 							new Exception("Hello")),
 						"Fish"),
 					Encoding.ASCII))
+                .Returns(null)
 				.SetName("Two crazy equal composite types are equal");
 
 			yield return new TestCaseData(
@@ -130,7 +132,7 @@ namespace ShyAlex.Compare.Tests
 							new Exception("Hello")),
 						"Fish"),
 					Encoding.Unicode))
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.value. Expected type: System.Text.ASCIIEncoding, but actual type was: System.Text.UnicodeEncoding"))
 				.SetName("Two crazy non-equal composite types are not equal");
 		}
 
@@ -139,46 +141,49 @@ namespace ShyAlex.Compare.Tests
 			yield return new TestCaseData(
 				new String[] { "Hello", "There", "Matey", "Arrgghhh" },
 				new String[] { "Hello", "There", "Matey", "Arrgghhh" })
+                .Returns(null)
 				.SetName("Two equal arrays are equal");
 
 			yield return new TestCaseData(
 				new String[] { "Hello", "There", "Matey", "Arrgghhh" },
 				new String[] { "Hello", "There", "Mate", "Arrgghhh" })
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.[2]. Expected: Matey, but actual was: Mate"))
 				.SetName("Two differing arrays are not equal");
 
 			yield return new TestCaseData(
 				new String[] { "Hello", "There", "Matey" },
 				new String[] { "Hello", "There", "Matey", "Arrgghhh" })
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>. Expected collection is smaller than actual collection"))
 				.SetName("Two arrays where the first is shorter than the second are not equal");
 
 			yield return new TestCaseData(
 				new String[] { "Hello", "There", "Matey", "Arrgghhh" },
 				new String[] { "Hello", "There", "Matey" })
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>. Expected collection is larger than actual collection"))
 				.SetName("Two arrays where the first is longer than the second are not equal");
 
 			yield return new TestCaseData(
 				new String[,] { { "A", "B" }, { "C", "D" } },
 				new String[,] { { "A", "B" }, { "C", "D" } })
+                .Returns(null)
 				.SetName("Two similar square arrays are equal");
 
 			yield return new TestCaseData(
 				new String[,] { { "A", "B" }, { "C", "D" } },
 				new String[,] { { "A", "B" }, { "C", "d" } })
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.[3]. Expected: D, but actual was: d"))
 				.SetName("Two differing square arrays are not equal");
 
 			yield return new TestCaseData(
 				new String[][] { new String[] { "A", "B" }, new String[] { "C", "D", "E" } },
 				new String[][] { new String[] { "A", "B" }, new String[] { "C", "D", "E" } })
+                .Returns(null)
 				.SetName("Two similar multi dimenstional arrays are equal");
 
 			yield return new TestCaseData(
 				new String[][] { new String[] { "A", "B" }, new String[] { "C", "D", "E" } },
 				new String[][] { new String[] { "A", "B" }, new String[] { "C", "d", "E" } })
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.[1].[1]. Expected: D, but actual was: d"))
 				.SetName("Two differing multi dimenstional arrays are not equal");
 		}
 
@@ -193,6 +198,7 @@ namespace ShyAlex.Compare.Tests
 			yield return new TestCaseData(
 				array,
 				array2)
+                .Returns(null)
 				.SetName("The compare can cope with circular references");
 
 			var array3 = new Object[] { array, null, "Hello", new DateTime(2010, 1, 1), new Exception("Hello There!") };
@@ -201,7 +207,7 @@ namespace ShyAlex.Compare.Tests
 			yield return new TestCaseData(
 				array,
 				array3)
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.[0]. Expected to find circular references: 0,1, but got: 0"))
 				.SetName("The compare can cope with objects with circular references that aren't equal");
 
 			// Here, the circular reference is on the second node, back to the first node.
@@ -219,7 +225,7 @@ namespace ShyAlex.Compare.Tests
 			yield return new TestCaseData(
 				root1,
 				root2)
-				.Throws(typeof(Exception))
+                .Returns(new StructuralDifference("Difference at <root-object>.<Property>k__BackingField.<Property>k__BackingField. Expected to find circular references: 0,2, but got: 0,1"))
 				.SetName("Two node graphs which contain different circular references are not equal");
 
 			// root3 is similar to root1
@@ -231,6 +237,7 @@ namespace ShyAlex.Compare.Tests
 			yield return new TestCaseData(
 				root1,
 				root3)
+                .Returns(null)
 				.SetName("Two structurally similar node graphs are equal");
 		}
 
