@@ -20,7 +20,7 @@ namespace ShyAlex.Compare.Tests
 
 			if (difference != null)
 			{
-				throw new Exception(difference.Descroption);
+				throw new Exception(difference.Description);
 			}
 		}
 

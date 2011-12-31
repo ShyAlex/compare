@@ -7,11 +7,11 @@ namespace ShyAlex.Compare
 {
 	public class StructuralDifference
 	{
-		public String Descroption { get; private set; }
+		public String Description { get; private set; }
 
 		public StructuralDifference(String description)
 		{
-			Descroption = description;
+			Description = description;
 		}
 	}
 }
