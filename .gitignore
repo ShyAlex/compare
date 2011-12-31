@@ -1,3 +1,5 @@
+Build/*.xml
+Build/Reports
 Compare/**.suo
 Compare/**/bin
 Compare/**/obj
