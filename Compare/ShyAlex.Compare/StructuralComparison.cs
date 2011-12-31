@@ -9,16 +9,29 @@ namespace ShyAlex.Compare
 {
 	public class StructuralComparison
 	{
-		private readonly Stack<Object> expected;
+        private class Field
+        {
+            public String Name { get; private set; }
 
-		private readonly Stack<Object> actual;
+            public Object Value { get; private set; }
+
+            public Field(String name, Object value)
+            {
+                Name = name;
+                Value = value;
+            }
+        }
+
+		private readonly Stack<Field> expected;
+
+		private readonly Stack<Field> actual;
 
 		public StructuralComparison(Object expected, Object actual)
 		{
-			var expectedStack = new Stack<Object>();
-			expectedStack.Push(expected);
-			var actualStack = new Stack<Object>();
-			actualStack.Push(actual);
+			var expectedStack = new Stack<Field>();
+			expectedStack.Push(new Field("root-object", expected));
+			var actualStack = new Stack<Field>();
+			actualStack.Push(new Field("root-object", actual));
 
 			this.expected = expectedStack;
 			this.actual = actualStack;
@@ -59,8 +72,8 @@ namespace ShyAlex.Compare
 
 		private StructuralDifference GetStructuralDifference()
 		{
-			var expectedObj = expected.Peek();
-			var actualObj = actual.Peek();
+			var expectedObj = expected.Peek().Value;
+			var actualObj = actual.Peek().Value;
 			var expectedType = expectedObj.GetType();
 
 			if (expectedType.IsPrimitive || expectedType.Equals(typeof(String)))
@@ -90,6 +103,7 @@ namespace ShyAlex.Compare
 		{
 			var expectedEnumerator = expectedSequence.GetEnumerator();
 			var actualEnumerator = actualSequence.GetEnumerator();
+            var i = 0;
 
 			while (expectedEnumerator.MoveNext())
 			{
@@ -98,8 +112,9 @@ namespace ShyAlex.Compare
 					return new StructuralDifference("expected collection is larger than actual collection");
 				}
 
-				expected.Push(expectedEnumerator.Current);
-				actual.Push(actualEnumerator.Current);
+                var fieldName = String.Format("[{0}]", i++);
+				expected.Push(new Field(fieldName, expectedEnumerator.Current));
+				actual.Push(new Field(fieldName, actualEnumerator.Current));
 				
 				var difference = GetDifference();
 
@@ -134,8 +149,8 @@ namespace ShyAlex.Compare
 
 		private Boolean GetNullDifference(out StructuralDifference difference)
 		{
-			var expectedObj = expected.Peek();
-			var actualObj = actual.Peek();
+			var expectedObj = expected.Peek().Value;
+			var actualObj = actual.Peek().Value;
             difference = null;
 
 			if (expectedObj == null)
@@ -159,13 +174,13 @@ namespace ShyAlex.Compare
 
 		private Boolean GetCircularRefsDifference(out StructuralDifference difference)
 		{
-			var expectedCircRefIndexes = expected.Select((o, i) => new { Index = i, Object = o })
-												 .Where(obj => Object.ReferenceEquals(obj.Object, expected.Peek()))
+			var expectedCircRefIndexes = expected.Select((f, i) => new { Index = i, Field = f })
+												 .Where(obj => Object.ReferenceEquals(obj.Field.Value, expected.Peek().Value))
 												 .Select(obj => obj.Index)
 												 .ToArray();
 
-			var actualCircRefIndexes = actual.Select((o, i) => new { Index = i, Object = o })
-											 .Where(obj => Object.ReferenceEquals(obj.Object, actual.Peek()))
+			var actualCircRefIndexes = actual.Select((f, i) => new { Index = i, Field = f })
+											 .Where(obj => Object.ReferenceEquals(obj.Field.Value, actual.Peek().Value))
 											 .Select(obj => obj.Index)
 											 .ToArray();
 
@@ -184,8 +199,8 @@ namespace ShyAlex.Compare
 
         private StructuralDifference GetTypeDifference()
         {
-            var expectedObj = expected.Peek();
-            var actualObj = actual.Peek();
+            var expectedObj = expected.Peek().Value;
+            var actualObj = actual.Peek().Value;
 
             var expectedType = expectedObj.GetType();
             var actualType = actualObj.GetType();
